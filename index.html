@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShopLeft : Discover retailers committed to diversity, equity, and inclusion. Support businesses that support all communities.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .tag-active {
+            background-color: #4f46e5;
+            color: white;
+        }
+        
+        .tag-hover:hover {
+            background-color: #e0e7ff;
+        }
+        
+        .link-card:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .no-results {
+            height: 300px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-10 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold text-indigo-800 mb-3">ShopLeft</h1>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                Discover retailers committed to diversity, equity, and inclusion. Support businesses that support all communities.
+            </p>
+            <div class="mt-6 relative max-w-md mx-auto">
+                <input type="text" id="searchInput" placeholder="Search retailers or tags..." 
+                       class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm">
+                <button id="searchButton" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-indigo-600">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="flex flex-col lg:flex-row gap-8 overflow-y-auto">
+            <!-- Tags Sidebar -->
+            <div class="lg:w-1/4">
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-tags mr-2 text-indigo-600"></i> Categories
+                    </h2>
+                    <div id="tagsList" class="space-y-2 pr-2">
+                        <!-- Tags will be populated here by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Links Content -->
+            <div class="lg:w-3/4">
+                <div id="linksContainer" class="bg-white rounded-xl shadow-md p-6 min-h-[500px]">
+                    <div id="categoryHeader" class="mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800" id="currentCategory">All Inclusive Retailers</h2>
+                        <p class="text-gray-600" id="resultCount"></p>
+                    </div>
+                    
+                    <div id="linksList" class="space-y-4">
+                        <!-- Links will be populated here by JavaScript -->
+                    </div>
+                    
+                    <div id="noResults" class="no-results hidden flex flex-col items-center justify-center text-center py-12">
+                        <i class="fas fa-search text-gray-300 text-5xl mb-4"></i>
+                        <h3 class="text-xl font-medium text-gray-500">No results found</h3>
+                        <p class="text-gray-400 mt-2">Try a different search term or category</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-16 text-center text-gray-500 py-6 border-t border-gray-200">
+            <p>© 2023 Inclusive Retailers Directory. All links are for informational purposes only.</p>
+            <p class="mt-2 text-sm">Made with <i class="fas fa-heart text-red-400"></i> for a more inclusive world</p>
+        </footer>
+    </div>
+
+    <script>
+        // Sample data - in a real app, this might come from an API
+        const retailersData = [
+            {
+                title: "Costco",
+                url: "https://www.costco.com/sustainability-people-communities.html",
+                description: "We believe that people are at the heart of everything we do — our 310,000 employees, the communities we operate in, and our suppliers.",
+                tags: ["Wholesale", ]
+            },
+            {
+                title: "Michael's",
+                url: "https://www.michaels.com/diversity",
+                description: "You belong at this craft table! Because variety is an integral part of creativity, we’re committed to honoring all makers. Whatever your story, you’re welcome here.",
+                tags: ["Crafting"]
+            }
+	];
+
+        // Get all unique tags from the data
+        const allTags = [...new Set(retailersData.flatMap(retailer => retailer.tags))].sort();
+
+        // DOM elements
+        const tagsList = document.getElementById('tagsList');
+        const linksList = document.getElementById('linksList');
+        const currentCategory = document.getElementById('currentCategory');
+        const resultCount = document.getElementById('resultCount');
+        const noResults = document.getElementById('noResults');
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+
+        // Current state
+        let currentActiveTag = 'all';
+        let currentSearchTerm = '';
+
+        // Initialize the page
+        function init() {
+            renderTags();
+            renderAllRetailers();
+            setupEventListeners();
+        }
+
+        // Render all tags in the sidebar
+        function renderTags() {
+            tagsList.innerHTML = '';
+            
+            // Add "All" tag
+            const allTag = createTagElement('all', 'All Retailers', true);
+            tagsList.appendChild(allTag);
+            
+            // Add all other tags
+            allTags.forEach(tag => {
+                const tagElement = createTagElement(tag, formatTagName(tag), false);
+                tagsList.appendChild(tagElement);
+            });
+        }
+
+        // Create a tag element
+        function createTagElement(tagId, displayName, isActive) {
+            const tagElement = document.createElement('div');
+            tagElement.className = `tag-item px-4 py-2 rounded-lg cursor-pointer transition-colors duration-200 ${isActive ? 'tag-active' : 'tag-hover'}`;
+            tagElement.dataset.tag = tagId;
+            tagElement.innerHTML = `
+                <i class="fas fa-${tagId === 'all' ? 'store' : 'tag'} mr-2"></i>
+                ${displayName}
+            `;
+            
+            tagElement.addEventListener('click', () => {
+                currentActiveTag = tagId;
+                currentSearchTerm = '';
+                searchInput.value = '';
+                updateActiveTagStyle();
+                filterAndRenderRetailers();
+            });
+            
+            return tagElement;
+        }
+
+        // Format tag names for display
+        function formatTagName(tag) {
+            return tag.split('-')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+        }
+
+        // Update active tag style
+        function updateActiveTagStyle() {
+            document.querySelectorAll('.tag-item').forEach(tag => {
+                tag.classList.toggle('tag-active', tag.dataset.tag === currentActiveTag);
+            });
+        }
+
+        // Render all retailers (initial view)
+        function renderAllRetailers() {
+            currentCategory.textContent = 'All Retailers';
+            resultCount.textContent = `Showing ${retailersData.length} retailers`;
+            
+            linksList.innerHTML = '';
+            retailersData.forEach(retailer => {
+                linksList.appendChild(createRetailerCard(retailer));
+            });
+        }
+
+        // Filter and render retailers based on current tag and search term
+        function filterAndRenderRetailers() {
+            let filteredRetailers = [...retailersData];
+            
+            // Filter by tag
+            if (currentActiveTag !== 'all') {
+                filteredRetailers = filteredRetailers.filter(retailer => 
+                    retailer.tags.includes(currentActiveTag)
+                );
+            }
+            
+            // Filter by search term
+            if (currentSearchTerm) {
+                const searchTerm = currentSearchTerm.toLowerCase();
+                filteredRetailers = filteredRetailers.filter(retailer => 
+                    retailer.title.toLowerCase().includes(searchTerm) ||
+                    retailer.description.toLowerCase().includes(searchTerm) ||
+                    retailer.tags.some(tag => tag.includes(searchTerm))
+                );
+            }
+            
+            // Update UI
+            updateResultsUI(filteredRetailers);
+        }
+
+        // Update the results UI
+        function updateResultsUI(filteredRetailers) {
+            // Update header
+            if (currentActiveTag === 'all') {
+                currentCategory.textContent = currentSearchTerm 
+                    ? `Search Results for "${currentSearchTerm}"`
+                    : 'All Inclusive Retailers';
+            } else {
+                currentCategory.textContent = formatTagName(currentActiveTag);
+                if (currentSearchTerm) {
+                    currentCategory.textContent += ` (Search: "${currentSearchTerm}")`;
+                }
+            }
+            
+            resultCount.textContent = filteredRetailers.length === 1 
+                ? 'Showing 1 retailer' 
+                : `Showing ${filteredRetailers.length} retailers`;
+            
+            // Update results
+            linksList.innerHTML = '';
+            
+            if (filteredRetailers.length === 0) {
+                noResults.classList.remove('hidden');
+            } else {
+                noResults.classList.add('hidden');
+                filteredRetailers.forEach(retailer => {
+                    const card = createRetailerCard(retailer);
+                    card.classList.add('fade-in');
+                    linksList.appendChild(card);
+                });
+            }
+        }
+
+        // Create a retailer card
+        function createRetailerCard(retailer) {
+            const card = document.createElement('div');
+            card.className = 'link-card bg-white p-5 rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200';
+            
+            card.innerHTML = `
+                <h3 class="text-xl font-semibold text-indigo-700 mb-1">
+                    <a href="${retailer.url}" target="_blank" rel="noopener noreferrer" class="hover:underline">${retailer.title}</a>
+                </h3>
+                <div class="flex items-center text-sm text-gray-500 mb-2">
+                    <span class="truncate">${retailer.url.replace(/^https?:\/\//, '')}</span>
+                    <a href="${retailer.url}" target="_blank" rel="noopener noreferrer" class="ml-2 text-indigo-500 hover:text-indigo-700">
+                        <i class="fas fa-external-link-alt"></i>
+                    </a>
+                </div>
+                <p class="text-gray-600 mb-3">${retailer.description}</p>
+                <div class="flex flex-wrap gap-2">
+                    ${retailer.tags.map(tag => `
+                        <span class="px-2 py-1 bg-indigo-50 text-indigo-700 text-xs rounded-full">${formatTagName(tag)}</span>
+                    `).join('')}
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Search input
+            searchInput.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+            
+            // Search button
+            searchButton.addEventListener('click', performSearch);
+        }
+
+        // Perform search
+        function performSearch() {
+            currentSearchTerm = searchInput.value.trim();
+            filterAndRenderRetailers();
+        }
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
