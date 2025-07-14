@@ -9,10 +9,17 @@
     },
     {
       "id": 2,
-      "name": "Michael's",
+      "name": "Michaels",
       "url": "https://www.michaels.com/diversity",
       "description": "You belong at this craft table! Because variety is an integral part of creativity, we're committed to honoring all makers. Whatever your story, you're welcome here.",
       "category_ids": [100]
+    },
+    {
+      "id": 3,
+      "name": "Penzeys",
+      "url": "https://www.penzeys.com/shop/about-us",
+      "description": "Before cooking, strength was the power to drive others away. With cooking, strength became the power to welcome others in.",
+      "category_ids": [300]
     }
   ]
 }
