@@ -32,6 +32,27 @@
         .no-results {
             height: 300px;
         }
+
+        /* Mobile menu styles */
+        .mobile-menu {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .mobile-menu.open {
+            transform: translateX(0);
+        }
+        
+        .mobile-overlay {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-in-out;
+        }
+        
+        .mobile-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -51,10 +72,19 @@
             </div>
         </header>
 
+        <!-- Mobile hamburger menu button -->
+        <button id="mobileMenuButton" class="lg:hidden fixed top-4 right-4 z-50 bg-indigo-600 text-white p-3 rounded-lg shadow-lg">
+            <i class="fas fa-bars" id="hamburgerIcon"></i>
+            <i class="fas fa-times hidden" id="closeIcon"></i>
+        </button>
+
+        <!-- Mobile overlay -->
+        <div id="mobileOverlay" class="mobile-overlay lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"></div>
+
         <!-- Main Content -->
-        <div class="flex flex-col lg:flex-row gap-8 overflow-y-auto">
-            <!-- Tags Sidebar -->
-            <div class="lg:w-1/4">
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Tags Sidebar - Desktop -->
+            <div class="hidden lg:block lg:w-1/4">
                 <div class="bg-white rounded-xl shadow-md p-6">
                     <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
                         <i class="fas fa-tags mr-2 text-indigo-600"></i> Categories
@@ -65,12 +95,24 @@
                 </div>
             </div>
 
+            <!-- Mobile Tags Sidebar -->
+            <div id="mobileTags" class="mobile-menu lg:hidden fixed top-0 left-0 h-full w-80 bg-white z-50 shadow-xl overflow-y-auto">
+                <div class="p-6 pt-16">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-tags mr-2 text-indigo-600"></i> Categories
+                    </h2>
+                    <div id="mobileTagsList" class="space-y-2">
+                        <!-- Tags will be populated here by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
             <!-- Links Content -->
-            <div class="lg:w-3/4">
+            <div class="w-full lg:w-3/4">
                 <div id="linksContainer" class="bg-white rounded-xl shadow-md p-6 min-h-[500px]">
                     <div id="categoryHeader" class="mb-6">
                         <h2 class="text-2xl font-bold text-gray-800" id="currentCategory">All Inclusive Retailers</h2>
-                        <p class="text-gray-600" id="resultCount"></p>
+                        <p class="text-gray-600" id="resultCount">Loading...</p>
                     </div>
                     
                     <div id="linksList" class="space-y-4">
@@ -94,58 +136,114 @@
     </div>
 
     <script>
-        // Sample data - in a real app, this might come from an API
-        const retailersData = [
-            {
-                title: "Costco",
-                url: "https://www.costco.com/sustainability-people-communities.html",
-                description: "We believe that people are at the heart of everything we do — our 310,000 employees, the communities we operate in, and our suppliers.",
-                tags: ["Wholesale", ]
-            },
-            {
-                title: "Michael's",
-                url: "https://www.michaels.com/diversity",
-                description: "You belong at this craft table! Because variety is an integral part of creativity, we’re committed to honoring all makers. Whatever your story, you’re welcome here.",
-                tags: ["Crafting"]
-            }
-	];
-
-        // Get all unique tags from the data
-        const allTags = [...new Set(retailersData.flatMap(retailer => retailer.tags))].sort();
+        // Global variables
+        let retailersData = [];
+        let categoriesData = [];
+        let currentActiveTag = 'all';
+        let currentSearchTerm = '';
 
         // DOM elements
         const tagsList = document.getElementById('tagsList');
+        const mobileTagsList = document.getElementById('mobileTagsList');
         const linksList = document.getElementById('linksList');
         const currentCategory = document.getElementById('currentCategory');
         const resultCount = document.getElementById('resultCount');
         const noResults = document.getElementById('noResults');
         const searchInput = document.getElementById('searchInput');
         const searchButton = document.getElementById('searchButton');
+        const mobileMenuButton = document.getElementById('mobileMenuButton');
+        const mobileTags = document.getElementById('mobileTags');
+        const mobileOverlay = document.getElementById('mobileOverlay');
+        const hamburgerIcon = document.getElementById('hamburgerIcon');
+        const closeIcon = document.getElementById('closeIcon');
 
-        // Current state
-        let currentActiveTag = 'all';
-        let currentSearchTerm = '';
+        // Load data from JSON files
+        async function loadData() {
+            try {
+                // Load both files concurrently
+                const [retailersResponse, categoriesResponse] = await Promise.all([
+                    fetch('retailers.json'),
+                    fetch('categories.json')
+                ]);
+                
+                if (!retailersResponse.ok || !categoriesResponse.ok) {
+                    throw new Error('Failed to load data files');
+                }
+                
+                const retailersDataFile = await retailersResponse.json();
+                const categoriesDataFile = await categoriesResponse.json();
+                
+                // Assign to global variables
+                retailersData = retailersDataFile.retailers;
+                categoriesData = categoriesDataFile.categories;
+                
+                console.log('Data loaded successfully from JSON files');
+                
+                // Initialize the page after data is loaded
+                init();
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showErrorMessage('Could not load data files. Please ensure retailers.json and categories.json are available and contain valid data.');
+            }
+        }
 
         // Initialize the page
         function init() {
+            if (!retailersData.length || !categoriesData.length) {
+                showErrorMessage('No data available. Please ensure retailers.json and categories.json contain valid data.');
+                return;
+            }
             renderTags();
             renderAllRetailers();
             setupEventListeners();
         }
 
-        // Render all tags in the sidebar
+        // Show error message
+        function showErrorMessage(message) {
+            linksList.innerHTML = `
+                <div class="text-center py-12">
+                    <i class="fas fa-exclamation-triangle text-red-400 text-5xl mb-4"></i>
+                    <h3 class="text-xl font-medium text-red-600">Error Loading Data</h3>
+                    <p class="text-gray-600 mt-2">${message}</p>
+                </div>
+            `;
+            resultCount.textContent = 'Error loading data';
+        }
+
+        // Render all tags in both desktop and mobile sidebars
         function renderTags() {
+            const tagElements = createTagElements();
+            
+            // Clear existing tags
             tagsList.innerHTML = '';
+            mobileTagsList.innerHTML = '';
+            
+            // Add tags to both lists
+            tagElements.forEach(tagElement => {
+                tagsList.appendChild(tagElement.cloneNode(true));
+                mobileTagsList.appendChild(tagElement.cloneNode(true));
+            });
+            
+            // Add event listeners to both lists
+            setupTagEventListeners();
+        }
+
+        // Create tag elements
+        function createTagElements() {
+            const elements = [];
             
             // Add "All" tag
             const allTag = createTagElement('all', 'All Retailers', true);
-            tagsList.appendChild(allTag);
+            elements.push(allTag);
             
-            // Add all other tags
-            allTags.forEach(tag => {
-                const tagElement = createTagElement(tag, formatTagName(tag), false);
-                tagsList.appendChild(tagElement);
+            // Add category tags
+            categoriesData.forEach(category => {
+                const tagElement = createTagElement(category.slug, category.name, false);
+                elements.push(tagElement);
             });
+            
+            return elements;
         }
 
         // Create a tag element
@@ -158,22 +256,21 @@
                 ${displayName}
             `;
             
-            tagElement.addEventListener('click', () => {
-                currentActiveTag = tagId;
-                currentSearchTerm = '';
-                searchInput.value = '';
-                updateActiveTagStyle();
-                filterAndRenderRetailers();
-            });
-            
             return tagElement;
         }
 
-        // Format tag names for display
-        function formatTagName(tag) {
-            return tag.split('-')
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(' ');
+        // Setup event listeners for tags
+        function setupTagEventListeners() {
+            document.querySelectorAll('.tag-item').forEach(tag => {
+                tag.addEventListener('click', () => {
+                    currentActiveTag = tag.dataset.tag;
+                    currentSearchTerm = '';
+                    searchInput.value = '';
+                    updateActiveTagStyle();
+                    filterAndRenderRetailers();
+                    closeMobileMenu();
+                });
+            });
         }
 
         // Update active tag style
@@ -198,21 +295,28 @@
         function filterAndRenderRetailers() {
             let filteredRetailers = [...retailersData];
             
-            // Filter by tag
-            if (currentActiveTag !== 'all') {
-                filteredRetailers = filteredRetailers.filter(retailer => 
-                    retailer.tags.includes(currentActiveTag)
-                );
-            }
-            
-            // Filter by search term
+            // If there's a search term, search across all retailers regardless of category
             if (currentSearchTerm) {
                 const searchTerm = currentSearchTerm.toLowerCase();
-                filteredRetailers = filteredRetailers.filter(retailer => 
-                    retailer.title.toLowerCase().includes(searchTerm) ||
-                    retailer.description.toLowerCase().includes(searchTerm) ||
-                    retailer.tags.some(tag => tag.includes(searchTerm))
-                );
+                filteredRetailers = filteredRetailers.filter(retailer => {
+                    const matchesName = retailer.name.toLowerCase().includes(searchTerm);
+                    const matchesDescription = retailer.description.toLowerCase().includes(searchTerm);
+                    const matchesCategory = retailer.category_ids.some(catId => {
+                        const category = categoriesData.find(cat => cat.id === catId);
+                        return category && category.name.toLowerCase().includes(searchTerm);
+                    });
+                    return matchesName || matchesDescription || matchesCategory;
+                });
+            } else {
+                // Only filter by category if there's no search term
+                if (currentActiveTag !== 'all') {
+                    const category = categoriesData.find(cat => cat.slug === currentActiveTag);
+                    if (category) {
+                        filteredRetailers = filteredRetailers.filter(retailer => 
+                            retailer.category_ids.includes(category.id)
+                        );
+                    }
+                }
             }
             
             // Update UI
@@ -222,14 +326,17 @@
         // Update the results UI
         function updateResultsUI(filteredRetailers) {
             // Update header
-            if (currentActiveTag === 'all') {
-                currentCategory.textContent = currentSearchTerm 
-                    ? `Search Results for "${currentSearchTerm}"`
-                    : 'All Inclusive Retailers';
+            if (currentSearchTerm) {
+                // When searching, always show "Search Results" regardless of category
+                currentCategory.textContent = `Search Results for "${currentSearchTerm}"`;
             } else {
-                currentCategory.textContent = formatTagName(currentActiveTag);
-                if (currentSearchTerm) {
-                    currentCategory.textContent += ` (Search: "${currentSearchTerm}")`;
+                // When not searching, show category name
+                if (currentActiveTag === 'all') {
+                    currentCategory.textContent = 'All Inclusive Retailers';
+                } else {
+                    const category = categoriesData.find(cat => cat.slug === currentActiveTag);
+                    const categoryName = category ? category.name : currentActiveTag;
+                    currentCategory.textContent = categoryName;
                 }
             }
             
@@ -257,9 +364,15 @@
             const card = document.createElement('div');
             card.className = 'link-card bg-white p-5 rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200';
             
+            // Get category names for this retailer
+            const categoryNames = retailer.category_ids.map(catId => {
+                const category = categoriesData.find(cat => cat.id === catId);
+                return category ? category.name : '';
+            }).filter(name => name);
+            
             card.innerHTML = `
                 <h3 class="text-xl font-semibold text-indigo-700 mb-1">
-                    <a href="${retailer.url}" target="_blank" rel="noopener noreferrer" class="hover:underline">${retailer.title}</a>
+                    <a href="${retailer.url}" target="_blank" rel="noopener noreferrer" class="hover:underline">${retailer.name}</a>
                 </h3>
                 <div class="flex items-center text-sm text-gray-500 mb-2">
                     <span class="truncate">${retailer.url.replace(/^https?:\/\//, '')}</span>
@@ -269,13 +382,28 @@
                 </div>
                 <p class="text-gray-600 mb-3">${retailer.description}</p>
                 <div class="flex flex-wrap gap-2">
-                    ${retailer.tags.map(tag => `
-                        <span class="px-2 py-1 bg-indigo-50 text-indigo-700 text-xs rounded-full">${formatTagName(tag)}</span>
+                    ${categoryNames.map(name => `
+                        <span class="px-2 py-1 bg-indigo-50 text-indigo-700 text-xs rounded-full">${name}</span>
                     `).join('')}
                 </div>
             `;
             
             return card;
+        }
+
+        // Mobile menu functions
+        function openMobileMenu() {
+            mobileTags.classList.add('open');
+            mobileOverlay.classList.add('open');
+            hamburgerIcon.classList.add('hidden');
+            closeIcon.classList.remove('hidden');
+        }
+
+        function closeMobileMenu() {
+            mobileTags.classList.remove('open');
+            mobileOverlay.classList.remove('open');
+            hamburgerIcon.classList.remove('hidden');
+            closeIcon.classList.add('hidden');
         }
 
         // Set up event listeners
@@ -289,6 +417,25 @@
             
             // Search button
             searchButton.addEventListener('click', performSearch);
+            
+            // Mobile menu button
+            mobileMenuButton.addEventListener('click', () => {
+                if (mobileTags.classList.contains('open')) {
+                    closeMobileMenu();
+                } else {
+                    openMobileMenu();
+                }
+            });
+            
+            // Mobile overlay
+            mobileOverlay.addEventListener('click', closeMobileMenu);
+            
+            // Close mobile menu on escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && mobileTags.classList.contains('open')) {
+                    closeMobileMenu();
+                }
+            });
         }
 
         // Perform search
@@ -298,7 +445,7 @@
         }
 
         // Initialize the app
-        document.addEventListener('DOMContentLoaded', init);
+        document.addEventListener('DOMContentLoaded', loadData);
     </script>
 </body>
 </html>

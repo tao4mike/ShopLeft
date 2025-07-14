@@ -1,0 +1,18 @@
+{
+  "retailers": [
+    {
+      "id": 1,
+      "name": "Costco",
+      "url": "https://www.costco.com/sustainability-people-communities.html",
+      "description": "We believe that people are at the heart of everything we do — our 310,000 employees, the communities we operate in, and our suppliers.",
+      "category_ids": [300, 480, 580]
+    },
+    {
+      "id": 2,
+      "name": "Michael's",
+      "url": "https://www.michaels.com/diversity",
+      "description": "You belong at this craft table! Because variety is an integral part of creativity, we're committed to honoring all makers. Whatever your story, you're welcome here.",
+      "category_ids": [100]
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "categories": [
+    {
+      "id": 100,
+      "name": "Arts & Crafts",
+      "slug": "arts-crafts"
+    },
+    {
+      "id": 120,
+      "name": "Automotive",
+      "slug": "automotive"
+    },
+    {
+      "id": 140,
+      "name": "Beauty & Personal Care",
+      "slug": "beauty-personal-care"
+    },
+    {
+      "id": 160,
+      "name": "Books & Media",
+      "slug": "books-media"
+    },
+    {
+      "id": 180,
+      "name": "Clothing & Apparel",
+      "slug": "clothing-apparel"
+    },
+    {
+      "id": 200,
+      "name": "Department Store",
+      "slug": "department-store"
+    },
+    {
+      "id": 220,
+      "name": "Discount Store",
+      "slug": "discount-store"
+    },
+    {
+      "id": 240,
+      "name": "Electronics",
+      "slug": "electronics"
+    },
+    {
+      "id": 260,
+      "name": "Financial Services",
+      "slug": "financial-services"
+    },
+    {
+      "id": 280,
+      "name": "Furniture",
+      "slug": "furniture"
+    },
+    {
+      "id": 300,
+      "name": "Grocery",
+      "slug": "grocery"
+    },
+    {
+      "id": 320,
+      "name": "Hardware & Tools",
+      "slug": "hardware-tools"
+    },
+    {
+      "id": 340,
+      "name": "Health & Wellness",
+      "slug": "health-wellness"
+    },
+    {
+      "id": 360,
+      "name": "Home & Garden",
+      "slug": "home-garden"
+    },
+    {
+      "id": 380,
+      "name": "Jewelry",
+      "slug": "jewelry"
+    },
+    {
+      "id": 400,
+      "name": "Luxury Goods",
+      "slug": "luxury-goods"
+    },
+    {
+      "id": 420,
+      "name": "Office Supplies",
+      "slug": "office-supplies"
+    },
+    {
+      "id": 440,
+      "name": "Online Marketplace",
+      "slug": "online-marketplace"
+    },
+    {
+      "id": 460,
+      "name": "Pet Supplies",
+      "slug": "pet-supplies"
+    },
+    {
+      "id": 480,
+      "name": "Pharmacy",
+      "slug": "pharmacy"
+    },
+    {
+      "id": 500,
+      "name": "Restaurant & Food Service",
+      "slug": "restaurant-food-service"
+    },
+    {
+      "id": 520,
+      "name": "Specialty Foods",
+      "slug": "specialty-foods"
+    },
+    {
+      "id": 540,
+      "name": "Sports & Outdoors",
+      "slug": "sports-outdoors"
+    },
+    {
+      "id": 560,
+      "name": "Toys & Games",
+      "slug": "toys-games"
+    },
+    {
+      "id": 580,
+      "name": "Wholesale",
+      "slug": "wholesale"
+    }
+  ]
+}
